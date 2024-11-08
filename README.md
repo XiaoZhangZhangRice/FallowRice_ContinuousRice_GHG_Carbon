@@ -1,2 +1,2 @@
 # FallowRice_ContinuousRice_GHG_Carbon
- Data and statistical repository for paper on greenhousegas emissions and carbon fractions in California
+ Data and statistical repository for "Greenhouse gas emissions altered by the introduction of a year-long fallow to continuous rice systems"
