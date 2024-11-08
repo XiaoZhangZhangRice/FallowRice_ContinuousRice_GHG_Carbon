@@ -1,0 +1,40 @@
+Stn Id,Stn Name,CIMIS Region,Month Year,Total ETo (mm),qc,Total Precip (mm),qc,Avg Sol Rad (W/sq.m),qc,Avg Vap Pres (kPa),qc,Avg Max Air Temp (C),qc,Avg Min Air Temp (C),qc,Avg Air Temp (C),qc,Avg Max Rel Hum (%),qc,Avg Min Rel Hum (%),qc,Avg Rel Hum (%),qc,Avg Dew Point (C),qc,Avg Wind Speed (m/s),qc,Avg Soil Temp (C),qc
+244,Biggs,Sacramento Valley,Oct-20,107.75, ,0.1, ,170, ,1.1,K,30,K,9.5,K,18.4,K,85, ,25, ,51,K,7.5,K,1.8,K,17.2, 
+244,Biggs,Sacramento Valley,Nov-20,52.25, ,8.5, ,119, ,0.9, ,19.1, ,4, ,10.6, ,94, ,37, ,66, ,4.4, ,1.8, ,11.4, 
+244,Biggs,Sacramento Valley,Dec-20,37.1,K,32.1,K,91,K,0.8,K,15.4,K,3.2, ,8.7,K,96,K,50,K,74,K,4,K,1.9,K,8.6,K
+244,Biggs,Sacramento Valley,Jan-21,39.43, ,53, ,88, ,0.9, ,15.2,K,4.8,K,9.5,K,95, ,58, ,79,K,5.5,K,2.3,K,8.8, 
+244,Biggs,Sacramento Valley,Feb-21,59.84, ,17.2, ,140,K,0.9, ,17.8, ,5.1, ,11.1, ,91, ,43, ,66, ,4.5, ,2.4, ,10.1, 
+244,Biggs,Sacramento Valley,Mar-21,104.43, ,36.9, ,212,K,0.8,K,19.6,K,4.1, ,11.4, ,88, ,34, ,59,K,3.2,K,2.4,K,11.2, 
+244,Biggs,Sacramento Valley,Apr-21,148.65, ,3.4, ,288,K,0.9, ,26.3, ,6.5, ,16.7, ,84, ,27, ,49, ,5.6, ,1.9, ,15.9, 
+244,Biggs,Sacramento Valley,May-21,201.61, ,0.1, ,334,K,1.2,K,29.6,K,12.7,K,21.2, ,75, ,27, ,46,K,8.8,K,2.4,K,20.1, 
+244,Biggs,Sacramento Valley,Jun-21,203, ,0, ,346,K,1.6, ,33.5,K,15.7, ,24.5, ,80, ,30, ,50, ,13.3, ,1.8, ,22.9, 
+244,Biggs,Sacramento Valley,Jul-21,203.44, ,0, ,328,K,1.7, ,35.1,K,16,L,25.9,K,83, ,31, ,50,L,14.5,L,1.6, ,24.7, 
+244,Biggs,Sacramento Valley,Aug-21,167.95,K,0,K,270,K,1.6,K,34.3,K,14.6, ,24,K,86,K,31,K,53,K,13.7,K,1.5,K,23.8,K
+244,Biggs,Sacramento Valley,Sep-21,138.08,K,2.1,L,242,L,1.3,L,32.5,L,11.9,L,21.7,L,82,L,27,L,50,L,10.5,L,1.8,L,20.8,L
+244,Biggs,Sacramento Valley,Oct-21,82.4, ,116.7, ,151, ,1.1,K,23.5,K,8.8, ,15.5, ,86, ,42, ,62,K,7.6,K,2.1,K,15.5,K
+244,Biggs,Sacramento Valley,Nov-21,36.86, ,17.7, ,95, ,1.2, ,18.9,K,6.7, ,12, ,99, ,61, ,85, ,9.3, ,1.5, ,12.8, 
+244,Biggs,Sacramento Valley,Dec-21,16.78,K,99.8,K,61, ,1,K,11.9,K,4, ,7.5, ,99, ,74, ,91,K,6,K,0.8,K,9.3, 
+244,Biggs,Sacramento Valley,Jan-22,36.26,K,2.3,K,106, ,0.9, ,17,K,2.3, ,8.5, ,99, ,51, ,79, ,4.9, ,0.5,K,7.9, 
+244,Biggs,Sacramento Valley,Feb-22,56.07,K,0.3, ,169,K,0.7,K,21.1,K,1.7,K,10.4,K,90, ,28, ,56,K,1.9,K,0.5,K,8.8, 
+244,Biggs,Sacramento Valley,Mar-22,85.57,K,18.8, ,206,K,0.9,K,22.4,K,5.6,K,13.9,K,88, ,34, ,58,L,5.1,L,0.5,K,13, 
+244,Biggs,Sacramento Valley,Apr-22,138.75,K,8.9, ,267,K,0.9,K,23.5,K,7.6,K,15.6,K,82, ,29, ,51,L,4.5,L,2.2,K,14.7, 
+244,Biggs,Sacramento Valley,May-22,189.13, ,2.8, ,315,K,1.1,K,27.7,K,11.6,K,19.6,K,77, ,28, ,47,K,7.6,K,2.5,K,17.6,K
+244,Biggs,Sacramento Valley,Jun-22,201.53, ,6.9, ,332,K,1.4, ,32.3, ,15,K,24, ,80, ,27, ,47, ,11.9, ,2, ,21.5, 
+244,Biggs,Sacramento Valley,Jul-22,199.21, ,0.1, ,327,K,1.6, ,34.1, ,15.6, ,25, ,83, ,32, ,52, ,14.3, ,1.7, ,23.9, 
+244,Biggs,Sacramento Valley,Aug-22,176.68, ,0.1, ,295,K,1.7, ,35.4,K,15.7,K,25.3,K,88, ,29, ,52,K,14.6,K,1.5, ,24.3, 
+244,Biggs,Sacramento Valley,Sep-22,124.45,K,50.6, ,222, ,1.6, ,32.9,K,14.2,K,22.5,K,89,K,33,K,59,K,13.6,K,1.5, ,21.6, 
+244,Biggs,Sacramento Valley,Oct-22,96.94, ,0, ,184,K,1.2, ,29.9,K,9,K,18,K,89, ,27, ,55,K,8.7,K,1.4, ,17.4, 
+244,Biggs,Sacramento Valley,Nov-22,49.1, ,44.4, ,119, ,0.8, ,17.9,K,2.6, ,9.2, ,98, ,41, ,70, ,3.7, ,1.8, ,10.3, 
+244,Biggs,Sacramento Valley,Dec-22,22.54,K,120.7, ,68, ,0.9,K,12.7,K,3.5, ,7.4,K,100,K,60,K,86,K,4.7,K,1.9,K,7.8, 
+244,Biggs,Sacramento Valley,Jan-23,36.06, ,146.8,K,83,K,0.9,K,13.9, ,5.1, ,9.2,K,94,K,59,K,78, ,5.2, ,2.9,K,8.5,K
+244,Biggs,Sacramento Valley,Feb-23,49.86, ,56.2, ,130,K,0.8, ,15.1,K,2, ,8.1,K,95, ,47, ,72,K,3.1,K,2.4, ,7.4,K
+244,Biggs,Sacramento Valley,Mar-23,70.17, ,123.6, ,166,K,0.9, ,15,K,5.4,K,9.9,K,95, ,54, ,75,K,5.5,K,2.8,K,9.7,K
+244,Biggs,Sacramento Valley,Apr-23,139.93, ,7.8,K,277,K,1, ,23.9, ,7.4,K,15.5,K,93, ,32, ,57,K,6.7,K,2.1, ,14.8,K
+244,Biggs,Sacramento Valley,May-23,162.4,K,11.7, ,297,K,1.4,K,26.6,K,11.9,K,19.1,K,95, ,35, ,64,L,11.8,L,2, ,19.7, 
+244,Biggs,Sacramento Valley,Jun-23,192.95,K,0.4, ,330,K,0.7,K,29.8, ,14.6,K,22.1,K,63,K,4,K,35,L,5.5,L,1.9, ,21.3,K
+244,Biggs,Sacramento Valley,Jul-23,204.27,K,0, ,340, ,1.9, ,34.5, ,16, ,25.5, ,85, ,37, ,56, ,16.2, ,1.5, ,23.9, 
+244,Biggs,Sacramento Valley,Aug-23,168.98,K,3.3, ,285,K,1.9, ,34.1, ,15.9,K,24.7, ,89, ,37, ,60, ,16.3, ,1.5,K,23.3, 
+244,Biggs,Sacramento Valley,Sep-23,122.41, ,6.7, ,235, ,1.5, ,29.9,K,11.7, ,20.2, ,93, ,41, ,65, ,13.3, ,1.5,K,20.3, 
+244,Biggs,Sacramento Valley,Oct-23,87.12, ,11.9, ,168,K,1.2, ,26.8,K,8.1,K,16.4,K,93, ,38, ,64,K,9.4,K,1.5, ,16.3, 
+244,Biggs,Sacramento Valley,Nov-23,53.1, ,9, ,116, ,1, ,20.4, ,4.5, ,11.5, ,93, ,41, ,69, ,5.8, ,1.7,K,11.8, 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

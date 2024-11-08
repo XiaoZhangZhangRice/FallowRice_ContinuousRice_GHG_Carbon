@@ -1,0 +1,386 @@
+---
+title: "GHG emission period ANOVAs"
+author: "Zhang Zhenglin"
+output:
+  pdf_document:
+    toc: yes
+editor_options:
+  markdown:
+    wrap: sentence
+---
+
+# Necessary libraries
+
+```{r message=FALSE,warning=FALSE}
+library(knitr)
+library(ggplot2)
+theme_set(theme_bw())
+library(emmeans)
+library(multcomp)
+library(PLS205)
+library(lme4)
+library(lmerTest)
+library(multcompView)
+library(car)
+library(Rmisc) 
+library(dplyr) #https://r4ds.had.co.nz/ (Chapter 3, Chapter 5, look at filter and select)
+# https://bookdown.org/ansellbr/WEHI_tidyR_course_book/
+library(stringr) 
+library(data.table)
+library(GGally)
+library(formatR)
+library(readxl)
+library(openxlsx)
+```
+
+# Data Organisation
+
+## Read from excel
+
+```{r}
+#read directly from the directory where I generated the files from
+master <- read_excel("D:/Academics/UC Davis/School Work/Linquist Lab/Data/R stats/GHG and MAOM POM/Seasonal cumulative calculations/all_seasonal_cumulative.xlsx", sheet = 1)
+str(master)
+```
+
+## Change variable type
+
+```{r}
+#add in block
+#first character in the plot number refers to blk
+#master <- master %>% mutate(Blk = substr(Plot, 1, 1))
+  
+master <- mutate_if(master, is.character, as.factor)
+
+str(master)
+table(master$Period)
+```
+
+# Organise into summer and winter
+
+```{r}
+Summer <- master %>%
+  filter (Period == "Summer")
+
+Winter <- master %>%
+  filter (Period == "Winter")
+
+str(Summer)
+
+str(Winter)
+```
+
+# Summer
+
+## CH4
+
+```{r}
+#Summer_CH4_model <- lm(total_CH4_emissions_kg~Treatment*Period_Year, data = Summer)
+
+Summer_CH4_model <- lm(total_CH4_emissions_kg~Treatment*Period_Year, data = Summer)
+
+PLS205::pls205_diagnostics(Summer_CH4_model)
+
+anova(Summer_CH4_model)
+
+#by year and treatment
+Summer_CH4_means <- emmeans(Summer_CH4_model, spec ='Treatment', by = 'Period_Year')
+Summer_CH4_effects <- contrast(Summer_CH4_means, method = 'pairwise', adjust = "tukey")
+#summary(Summer_CH4_effects)
+cld(Summer_CH4_means)
+
+Summer_CH4_model_treatment_only <- lm(total_CH4_emissions_kg~Treatment, data = Summer)
+
+#looking only at treatment together
+Summer_CH4_means_all <- emmeans(Summer_CH4_model_treatment_only, spec ='Treatment')
+Summer_CH4_effects_all <- contrast(Summer_CH4_means_all, method = 'pairwise', adjust = "tukey")
+#summary(Summer_CH4_effects)
+cld(Summer_CH4_means_all)
+```
+
+## N2O 
+
+```{r}
+#Summer_N2O_model <- lm(total_N2O_emissions_kg~Treatment*Period_Year, data = Summer)
+Summer_N2O_model <- lm(total_N2O_emissions_kg~Treatment*Period_Year, data = Summer)
+
+PLS205::pls205_diagnostics(Summer_N2O_model)
+
+anova(Summer_N2O_model)
+
+#by year and treatment
+Summer_N2O_means <- emmeans(Summer_N2O_model, spec ='Treatment', by = 'Period_Year')
+Summer_N2O_effects <- contrast(Summer_N2O_means, method = 'pairwise', adjust = "tukey")
+#summary(Summer_N2O_effects)
+cld(Summer_N2O_means)
+
+Summer_N2O_model_treatment_only <- lm(total_N2O_emissions_kg~Treatment, data = Summer)
+
+#looking only at treatment together
+Summer_N2O_means_all <- emmeans(Summer_N2O_model_treatment_only, spec ='Treatment')
+Summer_N2O_effects_all <- contrast(Summer_N2O_means_all, method = 'pairwise', adjust = "tukey")
+#summary(Summer_N2O_effects)
+cld(Summer_N2O_means_all)
+```
+
+## GWP
+
+```{r}
+#Summer_GWP_model <- lm(GWP_kg_CO2~Treatment*Period_Year, data = Summer)
+Summer_GWP_model <- lm(GWP_kg_CO2~Treatment*Period_Year, data = Summer)
+
+PLS205::pls205_diagnostics(Summer_GWP_model)
+
+anova(Summer_GWP_model)
+
+#by year and treatment
+Summer_GWP_means <- emmeans(Summer_GWP_model, spec ='Treatment', by = 'Period_Year')
+Summer_GWP_effects <- contrast(Summer_GWP_means, method = 'pairwise', adjust = "tukey")
+#summary(Summer_GWP_effects)
+cld(Summer_GWP_means)
+
+Summer_GWP_model_treatment_only <- lm(GWP_kg_CO2~Treatment, data = Summer)
+
+#looking only at treatment together
+Summer_GWP_means_all <- emmeans(Summer_GWP_model_treatment_only, spec ='Treatment')
+Summer_GWP_effects_all <- contrast(Summer_GWP_means_all, method = 'pairwise', adjust = "tukey")
+#summary(Summer_GWP_effects)
+cld(Summer_GWP_means_all)
+
+```
+
+
+## Yield
+
+```{r}
+# Add in yield
+Yield <- read_excel("Yield.xlsx", sheet = 1)
+Yield$Plot <- as.factor(Yield$Plot)
+
+#remove fallow plots and then match yield by plots
+Summer_Rice <- Summer %>%
+  filter(Treatment != "F") %>%
+  mutate(Yield_kgha = Yield$Yield_kgha[match(Plot, Yield$Plot)])
+
+Summer_Rice_Yield_model <- lm(Yield_kgha~Treatment*Period_Year, data = Summer_Rice)
+
+#by year
+anova(Summer_Rice_Yield_model)
+Summer_Rice_Yield_means <- emmeans(Summer_Rice_Yield_model, spec ='Treatment', by = 'Period_Year')
+Summer_Rice_Yield_effects <- contrast(Summer_Rice_Yield_means, method = 'pairwise', adjust = "tukey")
+#summary(Summer_Rice_Yield_effects)
+cld(Summer_Rice_Yield_means)
+
+#all
+Summer_Rice_Yield_means_all <- emmeans(Summer_Rice_Yield_model, spec ='Treatment')
+Summer_Rice_Yield_effects_all <- contrast(Summer_Rice_Yield_means_all, method = 'pairwise', adjust = "tukey")
+#summary(Summer_Rice_Yield_effects)
+cld(Summer_Rice_Yield_means_all)
+```
+
+
+# Winter
+
+## CH4 
+
+```{r}
+#Summer_CH4_model <- lm(total_CH4_emissions_kg~Treatment*Period_Year, data = Summer)
+Winter_CH4_model <- lm(total_CH4_emissions_kg~Treatment*Period_Year, data = Winter)
+
+PLS205::pls205_diagnostics(Winter_CH4_model)
+
+anova(Winter_CH4_model)
+
+#by year and treatment
+Winter_CH4_means <- emmeans(Winter_CH4_model, spec ='Treatment', by = 'Period_Year')
+Winter_CH4_effects <- contrast(Winter_CH4_means, method = 'pairwise', adjust = "tukey")
+#summary(Winter_CH4_effects)
+cld(Winter_CH4_means)
+
+#looking only at treatment together
+Winter_CH4_means_all <- emmeans(Winter_CH4_model, spec ='Treatment')
+Winter_CH4_effects_all <- contrast(Winter_CH4_means_all, method = 'pairwise', adjust = "tukey")
+#summary(Winter_CH4_effects)
+cld(Winter_CH4_means_all)
+```
+
+## N2O 
+
+```{r}
+#Summer_CH4_model <- lm(total_CH4_emissions_kg~Treatment*Period_Year, data = Summer)
+Winter_N2O_model <- lm(total_N2O_emissions_kg~Treatment*Period_Year, data = Winter)
+
+PLS205::pls205_diagnostics(Winter_N2O_model)
+
+anova(Winter_N2O_model)
+
+#by year and treatment
+Winter_N2O_means <- emmeans(Winter_N2O_model, spec ='Treatment', by = 'Period_Year')
+Winter_N2O_effects <- contrast(Winter_N2O_means, method = 'pairwise', adjust = "tukey")
+#summary(Winter_N2O_effects)
+cld(Winter_N2O_means)
+
+#looking only at treatment together
+Winter_N2O_means_all <- emmeans(Winter_N2O_model, spec ='Treatment')
+Winter_N2O_effects_all <- contrast(Winter_N2O_means_all, method = 'pairwise', adjust = "tukey")
+#summary(Winter_N2O_effects)
+cld(Winter_N2O_means_all)
+```
+
+## GWP
+
+```{r}
+Winter_GWP_model <- lm(GWP_kg_CO2~Treatment*Period_Year, data = Winter)
+
+PLS205::pls205_diagnostics(Winter_GWP_model)
+
+anova(Winter_GWP_model)
+
+#by year and treatment
+Winter_GWP_means <- emmeans(Winter_GWP_model, spec ='Treatment', by = 'Period_Year')
+Winter_GWP_effects <- contrast(Winter_GWP_means, method = 'pairwise', adjust = "tukey")
+#summary(Winter_GWP_effects)
+cld(Winter_GWP_means)
+
+#looking only at treatment together
+Winter_GWP_means_all <- emmeans(Winter_GWP_model, spec ='Treatment')
+Winter_GWP_effects_all <- contrast(Winter_GWP_means_all, method = 'pairwise', adjust = "tukey")
+#summary(Winter_GWP_effects)
+cld(Winter_GWP_means_all)
+```
+
+# Annual emissions for 2021/22 and 2022/23
+
+## Sum the values
+
+```{r}
+remove_2023 <- master %>% 
+  filter(Period_Year != "Summer_2023")
+
+annual_emissions <- remove_2023 %>% group_by(Plot, Treatment) %>%
+  summarize(total_CH4_emissions_kg = sum(total_CH4_emissions_kg,  na.rm = TRUE),
+            total_N2O_emissions_kg = sum(total_N2O_emissions_kg,  na.rm = TRUE),
+            GWP_kg_CO2 = sum(GWP_kg_CO2,  na.rm = TRUE)) %>%
+  mutate(Treatment_Plot = paste(Plot, Treatment, sep ="_")) %>%
+  mutate(Year = case_when(
+         Treatment_Plot %in% c("106_FR","107_CR","204_FR","209_CR","302_FR","307_CR", "402_F", "505_F", "601_F") ~ "2021/22",
+         Treatment_Plot %in% c("402_FR","409_CR","505_FR","512_CR", "209_F", "307_F","601_FR", "608_CR","K1_F") ~ "2021/23"
+  ))
+
+```
+
+## CH4
+
+```{r}
+Annual_CH4_model <- lm(total_CH4_emissions_kg~Treatment*Year, data = annual_emissions)
+
+PLS205::pls205_diagnostics(Annual_CH4_model)
+
+anova(Annual_CH4_model)
+
+#by year and treatment
+Annual_CH4_means <- emmeans(Annual_CH4_model, spec ='Treatment', by = 'Year')
+Annual_CH4_effects <- contrast(Annual_CH4_means, method = 'pairwise', adjust = "tukey")
+#summary(Annual_CH4_effects)
+cld(Annual_CH4_means)
+```
+
+## N2O
+
+```{r}
+Annual_N2O_model <- lm(total_N2O_emissions_kg~Treatment*Year, data = annual_emissions)
+
+PLS205::pls205_diagnostics(Annual_N2O_model)
+
+anova(Annual_N2O_model)
+
+#by year and treatment
+Annual_N2O_means <- emmeans(Annual_N2O_model, spec ='Treatment', by = 'Year')
+Annual_N2O_effects <- contrast(Annual_N2O_means, method = 'pairwise', adjust = "tukey")
+#summary(Annual_N2O_effects)
+cld(Annual_N2O_means)
+```
+
+## GWP
+
+```{r}
+Annual_GWP_model <- lm(GWP_kg_CO2~Treatment*Year, data = annual_emissions)
+
+PLS205::pls205_diagnostics(Annual_GWP_model)
+
+anova(Annual_GWP_model)
+
+#by year and treatment
+Annual_GWP_means <- emmeans(Annual_GWP_model, spec ='Treatment', by = 'Year')
+Annual_GWP_effects <- contrast(Annual_GWP_means, method = 'pairwise', adjust = "tukey")
+#summary(Annual_GWP_effects)
+cld(Annual_GWP_means)
+```
+
+# Average annual emissions
+
+## Fallow
+
+```{r}
+#filter out only fallow plots
+#get the annual emission of each plot with the first summarize
+#get mean values using the second summarize function
+
+fallow_average_annual_emissions <- master %>% 
+  filter(Treatment == "F") %>%
+  group_by(Plot) %>%
+  summarize(total_CH4_emissions_kg = sum(total_CH4_emissions_kg,  na.rm = TRUE),
+            total_N2O_emissions_kg = sum(total_N2O_emissions_kg,  na.rm = TRUE),
+            GWP_kg_CO2 = sum(GWP_kg_CO2,  na.rm = TRUE)) %>%
+  ungroup()%>%
+  summarize(total_CH4_emissions_kg = mean(total_CH4_emissions_kg,  na.rm = TRUE),
+         total_N2O_emissions_kg = mean(total_N2O_emissions_kg,  na.rm = TRUE),
+         GWP_kg_CO2 = mean(GWP_kg_CO2,  na.rm = TRUE)
+         )
+
+fallow_average_annual_emissions
+```
+
+## CR and RF
+
+```{r}
+
+#filter out CR, FR plots
+#get the annual emission of each plot with the first summarize
+#group dataframe by treatment
+#get mean values using the second summarize function
+
+CR_FR_avg_annual_emissions <- master %>% 
+  filter(Treatment != "F")%>%
+    group_by(Treatment, Period) %>%
+    summarize(total_CH4_emissions_kg = mean(total_CH4_emissions_kg,  na.rm = TRUE),
+         total_N2O_emissions_kg = mean(total_N2O_emissions_kg,  na.rm = TRUE),
+         GWP_kg_CO2 = mean(GWP_kg_CO2,  na.rm = TRUE)
+         ) %>%
+  ungroup()%>%
+  group_by(Treatment) %>%
+  summarize(total_CH4_emissions_kg = sum(total_CH4_emissions_kg,  na.rm = TRUE),
+            total_N2O_emissions_kg = sum(total_N2O_emissions_kg,  na.rm = TRUE),
+            GWP_kg_CO2 = sum(GWP_kg_CO2,  na.rm = TRUE))
+  
+
+CR_FR_avg_annual_emissions
+```
+
+# Arm doors and cross-check
+
+```{r}
+
+emissions_bytreatment <-master %>% 
+  group_by(Treatment, Period_Year) %>%
+  summarize(total_CH4_emissions_kg = mean(total_CH4_emissions_kg,  na.rm = TRUE),
+            total_N2O_emissions_kg = mean(total_N2O_emissions_kg,  na.rm = TRUE),
+            GWP_kg_CO2 = mean(GWP_kg_CO2,  na.rm = TRUE))
+
+master %>% 
+  group_by(Treatment, Period) %>%
+  summarize(total_CH4_emissions_kg = mean(total_CH4_emissions_kg,  na.rm = TRUE),
+            total_N2O_emissions_kg = mean(total_N2O_emissions_kg,  na.rm = TRUE),
+            GWP_kg_CO2 = mean(GWP_kg_CO2,  na.rm = TRUE))
+```
+

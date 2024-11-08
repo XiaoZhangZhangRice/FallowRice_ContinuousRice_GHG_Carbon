@@ -1,0 +1,341 @@
+---
+title: "MAOC and POC"
+author: "Zhang Zhenglin"
+output:
+  pdf_document:
+    toc: yes
+editor_options:
+  markdown:
+    wrap: sentence
+---
+
+# Necessary libraries
+
+```{r message=FALSE,warning=FALSE}
+library(knitr)
+library(ggplot2)
+theme_set(theme_bw())
+library(emmeans)
+library(multcomp)
+library(PLS205)
+library(lme4)
+library(lmerTest)
+library(multcompView)
+library(car)
+library(Rmisc) 
+library(dplyr) #https://r4ds.had.co.nz/ (Chapter 3, Chapter 5, look at filter and select)
+# https://bookdown.org/ansellbr/WEHI_tidyR_course_book/
+library(stringr) 
+library(data.table)
+library(GGally)
+library(formatR)
+library(readxl)
+library(ggpubr)
+library(xlsx)
+```
+
+# Data Organisation
+
+## Read from excel
+
+```{r}
+master <- read_excel("MAOC_POC_forR.xlsx", sheet = 2)
+str(master)
+```
+
+## Change variable type
+
+```{r}
+master <- mutate_if(master, is.character, as.factor)
+master$Blk <- as.factor(master$Blk)
+master$Year <- as.factor(master$Year)
+
+str(master)
+head(master)
+```
+
+# Calculating (g C kg-1 soil for each fraction)
+
+```{r}
+master$C_soil_g_per_kg <- (master$Fraction_weight_g/master$Post_shaking_total_weight_g)*master$Carbon_percent*10
+
+write.xlsx(master, file = "MAOC_POC_Levels.xlsx", sheetName = "1")
+```
+
+```{r}
+POC <- master %>% filter(Fraction == "POM")
+str(POC)
+
+MAOC <- master %>% filter(Fraction == "MAOM")
+str(MAOC)
+```
+
+
+```{r}
+ggplot(POC, aes(y=C_soil_g_per_kg, x=Year, color=Treatment)) + geom_boxplot()
+
+ggplot(MAOC, aes(y=C_soil_g_per_kg, x=Year, color=Treatment)) + geom_boxplot()
+```
+# POC 
+
+## ANOVA and Tukey
+
+```{r}
+POC_model <-lm(C_soil_g_per_kg~Treatment*Year, data = POC)
+anova(POC_model)
+```
+
+```{r}
+#all pooled
+
+POC_means_all <- emmeans(POC_model, spec ='Treatment')
+POC_effects_all <- contrast(POC_means_all, method = 'pairwise', adjust = "tukey")
+summary(POC_effects_all)
+cld(POC_means_all)
+
+#by year
+POC_means <- emmeans(POC_model, spec ='Treatment', by = 'Year')
+POC_effects <- contrast(POC_means, method = 'pairwise', adjust = "tukey")
+summary(POC_effects)
+cld(POC_means)
+```
+
+## POC Graph
+
+```{r}
+POC_graphing <- POC %>% group_by(Treatment, Year) %>% 
+mutate(C_soil_g_per_kg_se = sd(C_soil_g_per_kg)/sqrt(3)) %>% 
+  summarise(C_soil_g_per_kg = mean(C_soil_g_per_kg),
+            C_soil_g_per_kg_se = mean(C_soil_g_per_kg_se))
+
+POC_all <- POC %>% group_by(Treatment) %>% 
+mutate(C_soil_g_per_kg_se = sd(C_soil_g_per_kg)/sqrt(9)) %>% 
+  summarise(C_soil_g_per_kg = mean(C_soil_g_per_kg),
+            C_soil_g_per_kg_se = mean(C_soil_g_per_kg_se)) %>%
+  mutate(Year = "Average")
+
+POC_graphing <- rbind(POC_graphing, POC_all)
+
+POC_graph <-
+ggplot(POC_graphing, aes(x= Year, y = C_soil_g_per_kg, fill = Treatment))+
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  labs(x = "Year", y = "C_soil_g_per_kg", fill = "Treatment") +
+  scale_fill_manual(values = c("#0072B2","#FFCC66"),labels = c("Continuous rice (CR)", "Fallow rice (FR)"))+
+  geom_errorbar(aes(ymin=C_soil_g_per_kg-C_soil_g_per_kg_se, ymax=C_soil_g_per_kg+C_soil_g_per_kg_se), width=.2,position=position_dodge(0.7))+
+  scale_y_continuous(name=expression("POC (g kg"^{-1}*")"), limits = c(0, 22), expand = c(0, 0))+
+  scale_x_discrete(name="")+
+  theme_classic()+
+  theme(axis.text = element_text(size = 12), axis.title = element_text(size=14))+
+  theme(legend.position = "bottom",legend.text = element_text(size = 12))+
+  theme(legend.title = element_blank(),
+        legend.text = element_text(size = 16),
+        axis.text.x = element_text(size = 14),  # Increase size of x-axis text
+        axis.text.y = element_text(size = 14),  # Increase size of y-axis text
+        axis.title.y = element_text(size = 14), # Increase size of y-axis title
+        ) +
+  annotate(
+  "text",
+  x = c(1,4),  # X-axis positions for annotations
+  y = c(6.5,7),  # Y-axis positions for annotations
+  label = "*",
+  size = 10,
+  vjust = 0  # Adjust vertical position of asterisks
+)+
+  annotate(
+  "text",
+  x = c(1),  # X-axis positions for annotations
+  y = c(20),  # Y-axis positions for annotations
+  label = "POC",
+  size = 8,
+  vjust = 0  
+)+
+  geom_segment(aes(x = 3.5, xend = 3.5, y = 0, yend = 20.5), color = "black", linetype = "dashed", size=0.75) 
+
+ggsave(POC_graph, filename = "POC_graph.png", height = 15, width = 20, units = "cm", dpi=1000)
+
+
+```
+
+
+# MAOC 
+
+## ANOVA and Tukey
+
+```{r}
+MAOC_model <-lm(C_soil_g_per_kg~Treatment*Year, data = MAOC)
+anova(MAOC_model)
+```
+
+```{r}
+#all pooled
+
+MAOC_means_all <- emmeans(MAOC_model, spec ='Treatment')
+MAOC_effects_all <- contrast(MAOC_means_all, method = 'pairwise', adjust = "tukey")
+summary(MAOC_effects_all)
+cld(MAOC_means_all)
+
+#by year
+
+MAOC_means <- emmeans(MAOC_model, spec ='Treatment', by = 'Year')
+MAOC_effects <- contrast(MAOC_means, method = 'pairwise', adjust = "tukey")
+summary(MAOC_effects)
+cld(MAOC_means)
+```
+
+## MAOC Graph
+
+```{r}
+MAOC_graphing <- MAOC %>% group_by(Treatment, Year) %>% 
+mutate(C_soil_g_per_kg_se = sd(C_soil_g_per_kg)/sqrt(3)) %>% 
+  summarise(C_soil_g_per_kg = mean(C_soil_g_per_kg),
+            C_soil_g_per_kg_se = mean(C_soil_g_per_kg_se))
+
+MAOC_all <- MAOC %>% group_by(Treatment) %>% 
+mutate(C_soil_g_per_kg_se = sd(C_soil_g_per_kg)/sqrt(9)) %>% 
+  summarise(C_soil_g_per_kg = mean(C_soil_g_per_kg),
+            C_soil_g_per_kg_se = mean(C_soil_g_per_kg_se)) %>%
+  mutate(Year = "Average")
+
+MAOC_graphing <- rbind(MAOC_graphing, MAOC_all)
+
+MAOC_graph <-
+ggplot(MAOC_graphing, aes(x= Year, y = C_soil_g_per_kg, fill = Treatment))+
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  labs(x = "Year", y = "C_soil_g_per_kg", fill = "Treatment") +
+  scale_fill_manual(values = c("#0072B2","#FFCC66"),labels = c("Continuous rice (CR)", "Fallow rice (FR)"))+
+  geom_errorbar(aes(ymin=C_soil_g_per_kg-C_soil_g_per_kg_se, ymax=C_soil_g_per_kg+C_soil_g_per_kg_se), width=.2,position=position_dodge(0.7))+
+  scale_y_continuous(name=expression("MAOC (g kg"^{-1}*")"), limits = c(0, 22), expand = c(0, 0))+
+  scale_x_discrete(name="")+
+  theme_classic()+
+  theme(axis.text = element_text(size = 12), axis.title = element_text(size=14))+
+  theme(legend.position = "bottom",legend.text = element_text(size = 12))+
+  theme(legend.title = element_blank(),
+        legend.text = element_text(size = 16),
+        axis.text.x = element_text(size = 14),  # Increase size of x-axis text
+        axis.text.y = element_text(size = 14),  # Increase size of y-axis text
+        axis.title.y = element_text(size = 14), # Increase size of y-axis title
+        ) +
+  annotate(
+  "text",
+  x = c(3),  # X-axis positions for annotations
+  y = c(13),  # Y-axis positions for annotations
+  label = "*",
+  size = 10,
+  vjust = 0  # Adjust vertical position of asterisks
+)+
+  annotate(
+  "text",
+  x = c(1),  # X-axis positions for annotations
+  y = c(20),  # Y-axis positions for annotations
+  label = "MAOC",
+  size = 8,
+  vjust = 0  
+)+
+  geom_segment(aes(x = 3.5, xend = 3.5, y = 0, yend = 20.5), color = "black", linetype = "dashed", size=0.75)
+
+MAOC_graph
+
+ggsave(MAOC_graph, filename = "MAOC_graph.png", height = 15, width = 20, units = "cm", dpi=1000)
+
+```
+
+# SOC
+
+## ANOVA and Tukey
+
+```{r}
+
+SOC <- read_excel("MAOC_POC_Levels_total_carbon_summed.xlsx", sheet = 1) %>% filter(Fraction=="All")
+
+SOC <- mutate_if(SOC, is.character, as.factor)
+SOC$Blk <- as.factor(SOC$Blk)
+SOC$Year <- as.factor(SOC$Year)
+
+SOC_model <-lm(C_soil_g_per_kg~Treatment*Year, data = SOC)
+anova(SOC_model)
+```
+
+```{r}
+#all pooled
+
+SOC_means_all <- emmeans(SOC_model, spec ='Treatment')
+SOC_effects_all <- contrast(SOC_means_all, method = 'pairwise', adjust = "tukey")
+summary(SOC_effects_all)
+cld(SOC_means_all)
+
+#by year
+
+SOC_means <- emmeans(SOC_model, spec ='Treatment', by = 'Year')
+SOC_effects <- contrast(SOC_means, method = 'pairwise', adjust = "tukey")
+summary(SOC_effects)
+cld(SOC_means)
+```
+
+## SOC Graph
+
+```{r}
+SOC_graphing <- SOC %>% group_by(Treatment, Year) %>% 
+mutate(C_soil_g_per_kg_se = sd(C_soil_g_per_kg)/sqrt(3)) %>% 
+  summarise(C_soil_g_per_kg = mean(C_soil_g_per_kg),
+            C_soil_g_per_kg_se = mean(C_soil_g_per_kg_se))
+
+SOC_all <- SOC %>% group_by(Treatment) %>% 
+mutate(C_soil_g_per_kg_se = sd(C_soil_g_per_kg)/sqrt(9)) %>% 
+  summarise(C_soil_g_per_kg = mean(C_soil_g_per_kg),
+            C_soil_g_per_kg_se = mean(C_soil_g_per_kg_se)) %>%
+  mutate(Year = "Average")
+
+SOC_graphing <- rbind(SOC_graphing, SOC_all)
+
+SOC_graph <-
+ggplot(SOC_graphing, aes(x= Year, y = C_soil_g_per_kg, fill = Treatment))+
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  labs(x = "Year", y = "C_soil_g_per_kg", fill = "Treatment") +
+  scale_fill_manual(values = c("#0072B2","#FFCC66"),labels = c("Continuous rice (CR)", "Fallow rice (FR)"))+
+  geom_errorbar(aes(ymin=C_soil_g_per_kg-C_soil_g_per_kg_se, ymax=C_soil_g_per_kg+C_soil_g_per_kg_se), width=.2,position=position_dodge(0.7))+
+  scale_y_continuous(name=expression("SOC (g kg"^{-1}*")"), limits = c(0, 22), expand = c(0, 0))+
+  scale_x_discrete(name="")+
+  theme_classic()+
+  theme(axis.text = element_text(size = 12), axis.title = element_text(size=14))+
+  theme(legend.position = "bottom",legend.text = element_text(size = 12))+
+  theme(legend.title = element_blank(),
+        legend.text = element_text(size = 16),
+        axis.text.x = element_text(size = 14),  # Increase size of x-axis text
+        axis.text.y = element_text(size = 14),  # Increase size of y-axis text
+        axis.title.y = element_text(size = 14), # Increase size of y-axis title
+        ) +
+  annotate(
+  "text",
+  x = c(3, 4),  # X-axis positions for annotations
+  y = c(19, 18),  # Y-axis positions for annotations
+  label = "*",
+  size = 10,
+  vjust = 0  # Adjust vertical position of asterisks
+)+
+  annotate(
+  "text",
+  x = c(1),  # X-axis positions for annotations
+  y = c(20),  # Y-axis positions for annotations
+  label = "SOC",
+  size = 8,
+  vjust = 0  
+)+
+  geom_segment(aes(x = 3.5, xend = 3.5, y = 0, yend = 20.5), color = "black", linetype = "dashed", size=0.75)
+
+SOC_graph
+
+ggsave(SOC_graph, filename = "SOC_graph.png", height = 15, width = 20, units = "cm", dpi=1000)
+
+```
+
+# Combine all into 1 figure
+
+```{r}
+c_fractions_horizontal <- ggarrange(SOC_graph,POC_graph, MAOC_graph,
+                    #labels = c("2021", "2022", "2023"),
+                    ncol = 3,
+                    common.legend = TRUE,
+                    legend= "bottom")
+
+ggsave(c_fractions_horizontal, filename = "c_fractions_horizontal.jpg", height = 15, width = 50, units = "cm", dpi=600)
+```

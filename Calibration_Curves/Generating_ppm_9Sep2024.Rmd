@@ -1,0 +1,126 @@
+---
+title: "Generating PPM Values"
+author: "Zhang Zhenglin"
+output:
+  pdf_document:
+    toc: yes
+editor_options:
+  markdown:
+    wrap: sentence
+---
+
+# Necessary libraries
+
+```{r message=FALSE,warning=FALSE}
+library(knitr)
+library(ggplot2)
+theme_set(theme_bw())
+library(emmeans)
+library(multcomp)
+library(PLS205)
+library(lme4)
+library(lmerTest)
+library(multcompView)
+library(car)
+library(Rmisc) 
+library(dplyr) #https://r4ds.had.co.nz/ (Chapter 3, Chapter 5, look at filter and select)
+# https://bookdown.org/ansellbr/WEHI_tidyR_course_book/
+library(stringr) 
+library(data.table)
+library(GGally)
+library(formatR)
+library(readxl)
+library(lubridate)
+library(openxlsx)
+library(Peak2PPM)
+```
+
+
+```{r}
+std <- read_excel("D:/Academics/UC Davis/School Work/Linquist Lab/Data/R stats/GHG and MAOM POM/Calibration_Curves/Std_Input_Zhang.xlsx", sheet = 1)
+samples <- read_excel("D:/Academics/UC Davis/School Work/Linquist Lab/Data/R stats/GHG and MAOM POM/Calibration_Curves/AllFieldMeasurementsWrangled_Allrevised_Jerry_Zhang_DoNotEdit.xlsx", sheet = 1)
+
+str(samples)
+str(std)
+
+table(samples$GC_Run)
+table(std$GC_Run)
+
+final_data <- peak2ppm(std, samples)
+
+str(final_data)
+```
+
+```{r}
+final_data <- final_data %>% 
+  select(-Sample_Gas3_ppm, 
+         -Sample_Gas3_Peak, 
+         -Sample_Gas2_ppm, 
+         -Sample_Gas2_Peak,
+         -Sample_Gas1_ppm, 
+         -Sample_Gas1_Peak, 
+         -Sample_CO2_ppm, 
+         -Sample_CO2_Peak,
+         -Peak_Area_CH4,
+         -Peak_Area_N2O,
+         -Conc_PPM_CH4, 
+         -Conc_PPM_N2O)
+```
+
+
+# Subset into 2021, 2022, and 2023
+
+```{r}
+final_data$Date <- as.POSIXct(final_data$Date)
+
+final_data_2021 <- final_data %>%
+  filter(year(Date) == 2021)
+
+final_data_2022 <- final_data %>%
+  filter(year(Date) == 2022)
+
+#this is becuase the plots coming out of winter are in a different sequence than those going into summer
+split_date <- as.Date("2022-05-13")
+
+before_11_may_2022 <- final_data_2022 %>% filter(Date < split_date)
+after_11_may_2022 <- final_data_2022 %>% filter(Date > split_date)
+
+
+final_data_2023 <-final_data %>%
+  filter(year(Date) == 2023)
+```
+
+
+# Arrange by the right plots
+
+```{r}
+final_data_2021 <- final_data_2021 %>% 
+                   arrange(Date, match(Plot, c("106", "107","204","209","302","307","402","505","601"))) %>% 
+                   #mutate(Date = format(as.Date(Date), "%d-%m-%Y")) %>%
+                   mutate(Date = as.character(Date))
+
+before_11_may_2022 <- before_11_may_2022 %>% 
+                   arrange(Date, match(Plot, c("106", "107","204","209","302","307","402","505","601"))) %>% 
+                   #mutate(Date = format(as.Date(Date), "%d-%m-%Y")) %>%
+                   mutate(Date = as.character(Date))
+
+after_11_may_2022 <- after_11_may_2022 %>% 
+                   arrange(Date, match(Plot, c("402", "409", "505", "512", "601", "608","209","307","K1"))) %>% 
+                   #mutate(Date = format(as.Date(Date), "%d-%m-%Y")) %>%
+                   mutate(Date = as.character(Date))
+
+final_data_2023 <- final_data_2023 %>% 
+                   arrange(Date, match(Plot, c("701", "711", "805", "812", "903", "909"))) %>% 
+                   #mutate(Date = format(as.Date(Date), "%d-%m-%Y")) %>%
+                   mutate(Date = as.character(Date))
+```
+
+
+# Rbind
+
+```{r}
+final_data_rearranged <- rbind(final_data_2021, before_11_may_2022, after_11_may_2022, final_data_2023)
+  
+write.xlsx(final_data_rearranged, file = "AllFieldMeasurementsWrangled_Allrevised_Jerry_Zhang_DoNotEdit_RCalibrated.xlsx", sheetName = "Yay_Hopefully", rowNames = FALSE)
+```
+

@@ -1,0 +1,419 @@
+---
+title: "Splitting all fluxes into the right seasons, calculation of cumulative fluxes"
+author: "Zhang Zhenglin"
+output:
+  pdf_document:
+    toc: yes
+editor_options:
+  markdown:
+    wrap: sentence
+---
+
+# Necessary libraries
+
+```{r message=FALSE, warning=FALSE}
+library(knitr)
+library(ggplot2)
+theme_set(theme_bw())
+library(emmeans)
+library(multcomp)
+library(PLS205)
+library(lme4)
+library(lmerTest)
+library(multcompView)
+library(car)
+library(Rmisc) 
+library(dplyr) #https://r4ds.had.co.nz/ (Chapter 3, Chapter 5, look at filter and select)
+# https://bookdown.org/ansellbr/WEHI_tidyR_course_book/
+library(stringr) 
+library(data.table)
+library(GGally)
+library(formatR)
+library(readxl)
+library(openxlsx)
+library(zoo)
+library(dplyr)
+library(tidyr)
+library(zoo)
+
+```
+
+#Load master
+
+```{r}
+master <- read_excel("D:/Academics/UC Davis/School Work/Linquist Lab/Data/R stats/GHG and MAOM POM/Daily_Flux_Mastersheet_Final_DoNotEdit_RCalibratedValues_clean.xlsx", sheet = 1)
+
+#checking <- read_excel("Daily_Flux_Mastersheet_Final_DoNotEdit.xlsx", sheet = 1)
+#checking$Plot <- as.factor(master$Plot)
+
+master$Plot <- as.factor(master$Plot)
+
+#change from CH4 gha-1day-1 to CH4-C gha-1day-1 and N2O gha-1day-1 to N2O-N gha-1day-1
+#master$CH4_C_g_ha_day <- master$CH4_g_ha_day*0.749
+#master$N2O_N_g_ha_day <- master$N2O_g_ha_day*0.636
+
+#table(checking$Plot)
+table(master$Plot)
+```
+
+# 2021 summer rice
+
+```{r}
+summer_2021_rice <- master %>%
+  filter(Date >= as.POSIXct("2021-05-10") & Date <= as.POSIXct("2021-10-06"))%>% 
+  filter (Plot != c(402, 505, 601))
+
+start_date <- as.Date("2021-05-11")
+end_date <- as.Date("2021-10-5")
+date_seq <- seq.Date(start_date, end_date, by = "day")
+
+summer_2021_rice_interpolated <- summer_2021_rice %>%
+  group_by(Plot) %>%
+  complete(Date = date_seq) %>%
+  ungroup()
+
+summer_2021_rice_interpolated <- summer_2021_rice_interpolated %>%
+  group_by(Plot) %>%
+  mutate(CH4_g_ha_day = na.approx(CH4_g_ha_day, rule = 2)) %>%
+  mutate(N2O_g_ha_day = na.approx(N2O_g_ha_day, rule = 2)) %>%
+  ungroup()
+
+summer_2021_rice_seasonal_emissions <- summer_2021_rice_interpolated %>%
+  group_by(Plot) %>%
+  summarize(total_CH4_emissions = sum(CH4_g_ha_day, na.rm = TRUE), total_N2O_emissions = sum(N2O_g_ha_day, na.rm = TRUE)) %>%
+  mutate(Period_Year = "Summer_2021") %>%
+  mutate(Period = "Summer")%>%
+  mutate(Treatment = case_when(
+    Plot %in% c("106", "204", "302") ~ "FR",
+    Plot %in% c("107", "209", "307") ~ "CR",
+    TRUE ~ "Other"  # This line handles cases where plot is not listed
+  ))
+
+ggplot(summer_2021_rice_interpolated, aes(y=CH4_g_ha_day, x=Date, color = Plot)) + geom_point()
+ggplot(summer_2021_rice_interpolated, aes(y=N2O_g_ha_day, x=Date, color = Plot)) + geom_point()
+```
+
+# 2021 summer fallow
+
+```{r}
+summer_2021_fallow <- master %>%
+  filter(Date >= as.POSIXct("2021-05-10") & Date <= as.POSIXct("2021-10-06"))%>% 
+  filter (Plot == c(402, 505, 601))
+
+start_date <- as.Date("2021-07-16")
+end_date <- as.Date("2021-10-5")
+date_seq <- seq.Date(start_date, end_date, by = "day")
+
+summer_2021_fallow_interpolated <- summer_2021_fallow %>%
+  group_by(Plot) %>%
+  complete(Date = date_seq) %>%
+  ungroup()
+
+summer_2021_fallow_interpolated <- summer_2021_fallow_interpolated %>%
+  group_by(Plot) %>%
+  mutate(CH4_g_ha_day = na.approx(CH4_g_ha_day, rule = 2)) %>%
+  mutate(N2O_g_ha_day = na.approx(N2O_g_ha_day, rule = 2)) %>%
+  ungroup()
+
+summer_2021_fallow_seasonal_emissions <- summer_2021_fallow_interpolated %>%
+  group_by(Plot) %>%
+  summarize(total_CH4_emissions = sum(CH4_g_ha_day, na.rm = TRUE), total_N2O_emissions = sum(N2O_g_ha_day, na.rm = TRUE)) %>%
+  mutate(Period_Year = "Summer_2021") %>%
+  mutate(Period = "Summer")%>%
+  mutate(Treatment = case_when(
+    Plot %in% c("402", "505", "601") ~ "F",
+    TRUE ~ "Other"  # This line handles cases where plot is not listed
+  ))
+
+ggplot(summer_2021_fallow_interpolated, aes(y=CH4_g_ha_day, x=Date, color = Plot)) + geom_point()
+ggplot(summer_2021_fallow_interpolated, aes(y=N2O_g_ha_day, x=Date, color = Plot)) + geom_point()
+```
+
+
+# 2022 summer rice
+
+```{r}
+summer_2022_rice <- master %>%
+  filter(Date >= as.POSIXct("2022-05-15") & Date <= as.POSIXct("2022-10-13"))%>% 
+  filter (Plot %in% c(402, 409, 505, 512, 601, 608))
+
+start_date <- as.Date("2022-05-16")
+end_date <- as.Date("2022-10-12")
+date_seq <- seq.Date(start_date, end_date, by = "day")
+
+summer_2022_rice_interpolated <- summer_2022_rice %>%
+  group_by(Plot) %>%
+  complete(Date = date_seq) %>%
+  ungroup()
+
+summer_2022_rice_interpolated <- summer_2022_rice_interpolated %>%
+  group_by(Plot) %>%
+  mutate(CH4_g_ha_day = na.approx(CH4_g_ha_day, rule = 2)) %>%
+  mutate(N2O_g_ha_day = na.approx(N2O_g_ha_day, rule = 2)) %>%
+  ungroup()
+
+summer_2022_rice_seasonal_emissions <- summer_2022_rice_interpolated %>%
+  group_by(Plot) %>%
+  summarize(total_CH4_emissions = sum(CH4_g_ha_day, na.rm = TRUE), total_N2O_emissions = sum(N2O_g_ha_day, na.rm = TRUE)) %>%
+  mutate(Period_Year = "Summer_2022") %>%
+  mutate(Period = "Summer")%>%
+  mutate(Treatment = case_when(
+    Plot %in% c("402", "505", "601") ~ "FR",
+    Plot %in% c("409", "512", "608") ~ "CR",
+    TRUE ~ "Other"  # This line handles cases where plot is not listed
+  ))
+
+ggplot(summer_2022_rice_interpolated, aes(y=CH4_g_ha_day, x=Date, color = Plot)) + geom_point()
+ggplot(summer_2022_rice_interpolated, aes(y=N2O_g_ha_day, x=Date, color = Plot)) + geom_point()
+```
+
+# 2022 summer fallow
+
+```{r}
+summer_2022_fallow <- master %>%
+  filter(Date >= as.POSIXct("2022-05-15") & Date <= as.POSIXct("2022-10-13"))%>% 
+  filter (Plot %in% c(209, 307, "K1"))
+
+start_date <- as.Date("2022-05-31")
+end_date <- as.Date("2022-10-12")
+date_seq <- seq.Date(start_date, end_date, by = "day")
+
+summer_2022_fallow_interpolated <- summer_2022_fallow %>%
+  group_by(Plot) %>%
+  complete(Date = date_seq) %>%
+  ungroup()
+
+summer_2022_fallow_interpolated <- summer_2022_fallow_interpolated %>%
+  group_by(Plot) %>%
+  mutate(CH4_g_ha_day = na.approx(CH4_g_ha_day, rule = 2)) %>%
+  mutate(N2O_g_ha_day = na.approx(N2O_g_ha_day, rule = 2)) %>%
+  ungroup()
+
+summer_2022_fallow_seasonal_emissions <- summer_2022_fallow_interpolated %>%
+  group_by(Plot) %>%
+  summarize(total_CH4_emissions = sum(CH4_g_ha_day, na.rm = TRUE), total_N2O_emissions = sum(N2O_g_ha_day, na.rm = TRUE)) %>%
+  mutate(Period_Year = "Summer_2022") %>%
+  mutate(Period = "Summer")%>%
+  mutate(Treatment = case_when(
+    Plot %in% c("209", "307", "K1") ~ "F",
+    TRUE ~ "Other"  # This line handles cases where plot is not listed
+  ))
+
+ggplot(summer_2022_fallow_interpolated, aes(y=CH4_g_ha_day, x=Date, color = Plot)) + geom_point()
+ggplot(summer_2022_fallow_interpolated, aes(y=N2O_g_ha_day, x=Date, color = Plot)) + geom_point()
+```
+
+
+# 2023 summer rice
+
+```{r}
+summer_2023_rice <- master %>%
+  filter(Date >= as.POSIXct("2023-05-21") & Date <= as.POSIXct("2023-10-2"))
+
+start_date <- as.Date("2023-05-22")
+end_date <- as.Date("2023-10-2")
+date_seq <- seq.Date(start_date, end_date, by = "day")
+
+summer_2023_rice_interpolated <- summer_2023_rice %>%
+  group_by(Plot) %>%
+  complete(Date = date_seq) %>%
+  ungroup()
+
+summer_2023_rice_interpolated <- summer_2023_rice_interpolated %>%
+  group_by(Plot) %>%
+  mutate(CH4_g_ha_day = na.approx(CH4_g_ha_day, rule = 2)) %>%
+  mutate(N2O_g_ha_day = na.approx(N2O_g_ha_day, rule = 2)) %>%
+  ungroup()
+
+summer_2023_rice_seasonal_emissions <- summer_2023_rice_interpolated %>%
+  group_by(Plot) %>%
+  summarize(total_CH4_emissions = sum(CH4_g_ha_day, na.rm = TRUE), total_N2O_emissions = sum(N2O_g_ha_day, na.rm = TRUE)) %>%
+  mutate(Period_Year = "Summer_2023") %>%
+  mutate(Period = "Summer")%>%
+  mutate(Treatment = case_when(
+    Plot %in% c("701", "805", "903") ~ "FR",
+    Plot %in% c("711", "812", "909") ~ "CR",
+    TRUE ~ "Other"  # This line handles cases where plot is not listed
+  ))
+
+ggplot(summer_2023_rice_interpolated, aes(y=CH4_g_ha_day, x=Date, color = Plot)) + geom_point()
+ggplot(summer_2023_rice_interpolated, aes(y=N2O_g_ha_day, x=Date, color = Plot)) + geom_point()
+```
+
+# 2021/2022 rice winter
+
+```{r}
+winter_rice_2021_2022 <- master %>%
+  filter(Date >= as.POSIXct("2021-10-18") & Date <= as.POSIXct("2022-05-12"))%>% 
+  filter (Plot != c(402, 505, 601))
+
+start_date <- as.Date("2021-10-19")
+end_date <- as.Date("2022-05-11")
+date_seq <- seq.Date(start_date, end_date, by = "day")
+
+winter_rice_2021_2022_interpolated <- winter_rice_2021_2022 %>%
+  group_by(Plot) %>%
+  complete(Date = date_seq) %>%
+  ungroup()
+
+winter_rice_2021_2022_interpolated <- winter_rice_2021_2022_interpolated %>%
+  group_by(Plot) %>%
+  mutate(CH4_g_ha_day = na.approx(CH4_g_ha_day, rule = 2)) %>%
+  mutate(N2O_g_ha_day = na.approx(N2O_g_ha_day, rule = 2)) %>%
+  ungroup()
+
+winter_rice_2021_2022_seasonal_emissions <- winter_rice_2021_2022_interpolated %>%
+  group_by(Plot) %>%
+  summarize(total_CH4_emissions = sum(CH4_g_ha_day, na.rm = TRUE), total_N2O_emissions = sum(N2O_g_ha_day, na.rm = TRUE)) %>%
+  mutate(Period_Year = "Winter_2021_2022") %>%
+  mutate(Period = "Winter")%>%
+  mutate(Treatment = case_when(
+    Plot %in% c("106", "204", "302") ~ "FR",
+    Plot %in% c("107", "209", "307") ~ "CR",
+    TRUE ~ "Other"  # This line handles cases where plot is not listed
+  ))
+
+ggplot(winter_rice_2021_2022_interpolated, aes(y=CH4_g_ha_day, x=Date, color = Plot)) + geom_point()
+ggplot(winter_rice_2021_2022_interpolated, aes(y=N2O_g_ha_day, x=Date, color = Plot)) + geom_point()
+```
+
+# 2021/2022 fallow winter
+
+```{r}
+winter_fallow_2021_2022 <- master %>%
+  filter(Date >= as.POSIXct("2021-10-18") & Date <= as.POSIXct("2022-05-12"))%>% 
+  filter (Plot == c(402, 505, 601))
+
+start_date <- as.Date("2021-10-19")
+end_date <- as.Date("2022-05-11")
+date_seq <- seq.Date(start_date, end_date, by = "day")
+
+winter_fallow_2021_2022_interpolated <- winter_fallow_2021_2022 %>%
+  group_by(Plot) %>%
+  complete(Date = date_seq) %>%
+  ungroup()
+
+winter_fallow_2021_2022_interpolated <- winter_fallow_2021_2022_interpolated %>%
+  group_by(Plot) %>%
+  mutate(CH4_g_ha_day = na.approx(CH4_g_ha_day, rule = 2)) %>%
+  mutate(N2O_g_ha_day = na.approx(N2O_g_ha_day, rule = 2)) %>%
+  ungroup()
+
+winter_fallow_2021_2022_seasonal_emissions <- winter_fallow_2021_2022_interpolated %>%
+  group_by(Plot) %>%
+  summarize(total_CH4_emissions = sum(CH4_g_ha_day, na.rm = TRUE), total_N2O_emissions = sum(N2O_g_ha_day, na.rm = TRUE)) %>%
+  mutate(Period_Year = "Winter_2021_2022") %>%
+  mutate(Period = "Winter")%>%
+  mutate(Treatment = case_when(
+    Plot %in% c("402", "505", "601") ~ "F",
+    TRUE ~ "Other"  # This line handles cases where plot is not listed
+  ))
+
+ggplot(winter_fallow_2021_2022_interpolated, aes(y=CH4_g_ha_day, x=Date, color = Plot)) + geom_point()
+ggplot(winter_fallow_2021_2022_interpolated, aes(y=N2O_g_ha_day, x=Date, color = Plot)) + geom_point()
+```
+
+
+# 2022/2023 rice winter
+
+```{r}
+winter_rice_2022_2023 <- master %>%
+  filter(Date >= as.POSIXct("2022-11-3") & Date <= as.POSIXct("2023-4-19"))%>% 
+  filter (Plot %in% c(402, 409, 505, 512, 601, 608))
+
+start_date <- as.Date("2022-11-4")
+end_date <- as.Date("2023-04-18")
+date_seq <- seq.Date(start_date, end_date, by = "day")
+
+winter_rice_2022_2023_interpolated <- winter_rice_2022_2023 %>%
+  group_by(Plot) %>%
+  complete(Date = date_seq) %>%
+  ungroup()
+
+winter_rice_2022_2023_interpolated <- winter_rice_2022_2023_interpolated %>%
+  group_by(Plot) %>%
+  mutate(CH4_g_ha_day = na.approx(CH4_g_ha_day, rule = 2)) %>%
+  mutate(N2O_g_ha_day = na.approx(N2O_g_ha_day, rule = 2)) %>%
+  ungroup()
+
+winter_rice_2022_2023_seasonal_emissions <- winter_rice_2022_2023_interpolated %>%
+  group_by(Plot) %>%
+  summarize(total_CH4_emissions = sum(CH4_g_ha_day, na.rm = TRUE), total_N2O_emissions = sum(N2O_g_ha_day, na.rm = TRUE)) %>%
+  mutate(Period_Year = "Winter_2022_2023") %>%
+  mutate(Period = "Winter")%>%
+  mutate(Treatment = case_when(
+    Plot %in% c("402", "505", "601") ~ "FR",
+    Plot %in% c("409", "512", "608") ~ "CR",
+    TRUE ~ "Other"  # This line handles cases where plot is not listed
+  ))
+
+ggplot(winter_rice_2022_2023_interpolated, aes(y=CH4_g_ha_day, x=Date, color = Plot)) + geom_point()
+ggplot(winter_rice_2022_2023_interpolated, aes(y=N2O_g_ha_day, x=Date, color = Plot)) + geom_point()
+
+```
+
+# 2022/2023 fallow  winter
+
+```{r}
+winter_fallow_2022_2023 <- master %>%
+  filter(Date >= as.POSIXct("2022-11-3") & Date <= as.POSIXct("2023-4-19"))%>% 
+  filter (Plot %in% c(209, 307, "K1"))
+
+start_date <- as.Date("2022-11-4")
+end_date <- as.Date("2023-04-18")
+date_seq <- seq.Date(start_date, end_date, by = "day")
+
+winter_fallow_2022_2023_interpolated <- winter_fallow_2022_2023 %>%
+  group_by(Plot) %>%
+  complete(Date = date_seq) %>%
+  ungroup()
+
+winter_fallow_2022_2023_interpolated <- winter_fallow_2022_2023_interpolated %>%
+  group_by(Plot) %>%
+  mutate(CH4_g_ha_day = na.approx(CH4_g_ha_day, rule = 2)) %>%
+  mutate(N2O_g_ha_day = na.approx(N2O_g_ha_day, rule = 2)) %>%
+  ungroup()
+
+winter_fallow_2022_2023_seasonal_emissions <- winter_fallow_2022_2023_interpolated %>%
+  group_by(Plot) %>%
+  summarize(total_CH4_emissions = sum(CH4_g_ha_day, na.rm = TRUE), total_N2O_emissions = sum(N2O_g_ha_day, na.rm = TRUE))%>%
+  mutate(Period_Year = "Winter_2022_2023") %>%
+  mutate(Period = "Winter") %>%
+  mutate(Treatment = case_when(
+    Plot %in% c("209","307", "K1") ~ "F",
+    TRUE ~ "Other"  # This line handles cases where plot is not listed
+  ))
+
+ggplot(winter_fallow_2022_2023_interpolated, aes(y=CH4_g_ha_day, x=Date, color = Plot)) + geom_point()
+ggplot(winter_fallow_2022_2023_interpolated, aes(y=N2O_g_ha_day, x=Date, color = Plot)) + geom_point()
+
+```
+
+
+# Put all seasonal emissions together
+
+```{r}
+all_seasonal_cumulative <- rbind(summer_2021_rice_seasonal_emissions,
+                                 summer_2022_rice_seasonal_emissions,
+                                 summer_2023_rice_seasonal_emissions,
+                                 summer_2021_fallow_seasonal_emissions,
+                                 summer_2022_fallow_seasonal_emissions,
+                                 winter_rice_2021_2022_seasonal_emissions,
+                                 winter_rice_2022_2023_seasonal_emissions,
+                                 winter_fallow_2021_2022_seasonal_emissions,
+                                 winter_fallow_2022_2023_seasonal_emissions 
+                                 )
+
+#compute GWP using CH4 (28) and N2O (265)
+all_seasonal_cumulative$GWP <- all_seasonal_cumulative$total_CH4_emissions*28+ all_seasonal_cumulative$total_N2O_emissions*265
+
+all_seasonal_cumulative$GWP_kg_CO2 <- all_seasonal_cumulative$GWP/1000
+all_seasonal_cumulative$total_CH4_emissions_kg <- all_seasonal_cumulative$total_CH4_emissions/1000
+all_seasonal_cumulative$total_N2O_emissions_kg <- all_seasonal_cumulative$total_N2O_emissions/1000
+
+table(all_seasonal_cumulative$Period_Year)
+table(all_seasonal_cumulative$Period)
+
+write.xlsx(all_seasonal_cumulative, file = "all_seasonal_cumulative.xlsx", sheetName = "1", rowNames = FALSE)
+```
+
